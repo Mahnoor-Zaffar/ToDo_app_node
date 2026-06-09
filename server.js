@@ -42,11 +42,25 @@ wss.on('connection', (ws) => {
 // Provide broadcast function to Express routes
 app.locals.broadcast = (data) => {
   const message = JSON.stringify(data);
-  wss.clients.forEach(client => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(message);
+  const clients = Array.from(wss.clients);
+  
+  function sendChunk(startIndex) {
+    const chunkSize = 100;
+    const end = Math.min(startIndex + chunkSize, clients.length);
+    for (let i = startIndex; i < end; i++) {
+      const client = clients[i];
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(message);
+      }
     }
-  });
+    if (end < clients.length) {
+      setImmediate(() => sendChunk(end));
+    }
+  }
+  
+  if (clients.length > 0) {
+    sendChunk(0);
+  }
 };
 
 server.listen(PORT, () => {

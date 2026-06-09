@@ -11,10 +11,21 @@ const storage = multer.diskStorage({
     cb(null, path.join(__dirname, '../public/uploads/'))
   },
   filename: function (req, file, cb) {
-    cb(null, Date.now() + '-' + file.originalname)
+    const safeName = file.originalname.replace(/[^a-zA-Z0-9.\-_]/g, '');
+    cb(null, Date.now() + '-' + safeName);
   }
 });
-const upload = multer({ storage: storage });
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf', 'text/plain'];
+    if (!allowedTypes.includes(file.mimetype)) {
+      return cb(new Error('Invalid file type. Only JPG, PNG, PDF, and TXT are allowed.'), false);
+    }
+    cb(null, true);
+  }
+});
 
 function parseTags(text) {
   const tagRegex = /#(\w+)/g;
@@ -102,12 +113,19 @@ router.put('/:id', (req, res) => {
     if (!task) return res.status(404).json({ error: 'Task not found' });
 
     const updates = req.body;
+    const allowedFields = ['text', 'notes', 'priority', 'dueDate', 'timeBlock', 'isCompleted', 'assigneeId'];
     let setClauses = [];
     let params = [];
-    for (const [key, value] of Object.entries(updates)) {
-      setClauses.push(`${key} = ?`);
-      params.push(value);
+    
+    for (const key of allowedFields) {
+      if (updates[key] !== undefined) {
+        setClauses.push(`${key} = ?`);
+        params.push(updates[key]);
+      }
     }
+    
+    if (setClauses.length === 0) return res.status(400).json({ error: 'No valid fields provided for update' });
+
     params.push(id);
 
     if (setClauses.length > 0) {

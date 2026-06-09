@@ -1,5 +1,8 @@
 export const api = {
-  me: () => fetch('/api/auth/me').then(r => r.json()),
+  me: () => fetch('/api/auth/me', { headers: { 'Authorization': 'Bearer mock-jwt-token' } }).then(r => {
+    if (!r.ok) throw new Error('Unauthorized');
+    return r.json();
+  }),
   users: () => fetch('/api/auth/users').then(r => r.json()),
   projects: () => fetch('/api/projects').then(r => r.json()),
   createProject: (name) => fetch('/api/projects', {
