@@ -113,7 +113,7 @@ router.put('/:id', (req, res) => {
     if (!task) return res.status(404).json({ error: 'Task not found' });
 
     const updates = req.body;
-    const allowedFields = ['text', 'notes', 'priority', 'dueDate', 'timeBlock', 'isCompleted', 'assigneeId'];
+    const allowedFields = ['text', 'notes', 'priority', 'dueDate', 'timeBlock', 'isCompleted', 'assigneeId', 'status'];
     let setClauses = [];
     let params = [];
     
@@ -135,8 +135,9 @@ router.put('/:id', (req, res) => {
     const updatedTask = db.prepare('SELECT * FROM Tasks WHERE id = ?').get(id);
     triggerWebhook(updatedTask, 'task.updated');
 
+    const clientId = req.headers['x-client-id'];
     if (req.app.locals.broadcast) {
-      req.app.locals.broadcast({ type: 'TASK_UPDATED', payload: updatedTask });
+      req.app.locals.broadcast({ type: 'TASK_UPDATED', payload: updatedTask, clientId });
     }
 
     res.json(updatedTask);

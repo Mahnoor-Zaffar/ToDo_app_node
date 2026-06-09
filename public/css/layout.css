@@ -1,15 +1,19 @@
 .app-container {
   display: flex;
-  height: 100vh;
-  width: 100vw;
+  height: 95vh;
+  width: 95vw;
+  max-width: 1400px;
+  background-color: var(--bg-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
   overflow: hidden;
 }
 
 .sidebar {
-  width: 260px;
+  width: 280px;
   background-color: var(--bg-secondary);
   border-right: 1px solid var(--border-color);
-  padding: 1.5rem 1rem;
+  padding: 1.5rem;
   display: flex;
   flex-direction: column;
 }
@@ -18,27 +22,35 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  background-color: var(--bg-primary);
   position: relative;
+  background-color: var(--bg-primary);
 }
 
 .main-header {
   padding: 2rem 3rem 1rem;
-  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-right {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
 }
 
 .main-content {
   flex: 1;
-  padding: 2rem 3rem;
+  padding: 0 3rem 2rem;
   overflow-y: auto;
 }
 
 .right-drawer {
-  width: 350px;
-  background-color: var(--bg-secondary);
+  width: 360px;
+  background: linear-gradient(to bottom, #f0f7f4, #e6f0ed);
   border-left: 1px solid var(--border-color);
   transform: translateX(100%);
-  transition: transform 0.3s ease;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: absolute;
   top: 0;
   right: 0;
@@ -46,8 +58,32 @@
   z-index: 10;
   padding: 2rem;
   overflow-y: auto;
+  box-shadow: -4px 0 15px rgba(0,0,0,0.05);
 }
 
 .right-drawer.open {
   transform: translateX(0);
+}
+
+/* Kanban */
+#kanban-view {
+  display: flex;
+  gap: 1.5rem;
+  height: 100%;
+}
+
+.kanban-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+}
+
+.kanban-dropzone {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 100px;
+  padding-bottom: 2rem;
 }

@@ -28,6 +28,7 @@ db.exec(`
     assigneeId INTEGER,
     attachmentPath TEXT,
     isCompleted INTEGER DEFAULT 0,
+    status TEXT DEFAULT 'todo',
     FOREIGN KEY(projectId) REFERENCES Projects(id),
     FOREIGN KEY(assigneeId) REFERENCES Users(id)
   );
@@ -44,6 +45,9 @@ db.exec(`
     FOREIGN KEY(taskId) REFERENCES Tasks(id) ON DELETE CASCADE,
     FOREIGN KEY(tagId) REFERENCES Tags(id) ON DELETE CASCADE
   );
+
+  CREATE INDEX IF NOT EXISTS idx_tasks_projectId ON Tasks(projectId);
+  CREATE INDEX IF NOT EXISTS idx_tasks_dueDate ON Tasks(dueDate);
 `);
 
 // Seed default data if empty
