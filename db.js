@@ -19,6 +19,7 @@ db.exec(`
 
   CREATE TABLE IF NOT EXISTS Tasks (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    uuid TEXT UNIQUE,
     text TEXT NOT NULL,
     notes TEXT,
     priority TEXT DEFAULT 'P5',
@@ -48,6 +49,8 @@ db.exec(`
 
   CREATE INDEX IF NOT EXISTS idx_tasks_projectId ON Tasks(projectId);
   CREATE INDEX IF NOT EXISTS idx_tasks_dueDate ON Tasks(dueDate);
+  CREATE INDEX IF NOT EXISTS idx_tasks_status ON Tasks(status);
+  CREATE INDEX IF NOT EXISTS idx_tasks_assigneeId ON Tasks(assigneeId);
 `);
 
 // Seed default data if empty
@@ -61,5 +64,8 @@ if (userCount === 0) {
   projInsert.run('Work');
   projInsert.run('Personal');
 }
+
+// Transaction wrapper
+db.runTransaction = (fn) => db.transaction(fn)();
 
 module.exports = db;

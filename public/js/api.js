@@ -1,4 +1,11 @@
-export const clientId = Math.random().toString(36).substring(2, 15);
+export const generateUUID = () => {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+};
+
+export const clientId = generateUUID();
 
 export const api = {
   me: () => fetch('/api/auth/me', { headers: { 'Authorization': 'Bearer mock-jwt-token' } }).then(r => {
@@ -20,12 +27,18 @@ export const api = {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-client-id': clientId },
     body: JSON.stringify(data)
-  }).then(r => r.json()),
+  }).then(r => {
+    if(!r.ok) throw new Error('Failed');
+    return r.json();
+  }),
   updateTask: (id, updates) => fetch(`/api/tasks/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', 'x-client-id': clientId },
     body: JSON.stringify(updates)
-  }).then(r => r.json()),
+  }).then(r => {
+    if(!r.ok) throw new Error('Failed');
+    return r.json();
+  }),
   deleteTask: (id) => fetch(`/api/tasks/${id}`, { 
     method: 'DELETE',
     headers: { 'x-client-id': clientId } 
@@ -37,6 +50,9 @@ export const api = {
       method: 'POST',
       headers: { 'x-client-id': clientId },
       body: formData
-    }).then(r => r.json());
+    }).then(r => {
+      if(!r.ok) throw new Error('Failed');
+      return r.json();
+    });
   }
 };

@@ -3,109 +3,89 @@ const router = express.Router();
 const db = require('../db');
 const multer = require('multer');
 const path = require('path');
+const crypto = require('crypto');
 const { triggerWebhook } = require('../services/integrationService');
 
-// Setup multer for local file uploads
+// Ultra-secure Multer config
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, path.join(__dirname, '../public/uploads/'))
   },
   filename: function (req, file, cb) {
-    const safeName = file.originalname.replace(/[^a-zA-Z0-9.\-_]/g, '');
-    cb(null, Date.now() + '-' + safeName);
+    const ext = path.extname(file.originalname).toLowerCase();
+    const hash = crypto.randomBytes(16).toString('hex');
+    cb(null, hash + ext);
   }
 });
+
 const upload = multer({ 
   storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB Limit
   fileFilter: (req, file, cb) => {
-    const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf', 'text/plain'];
-    if (!allowedTypes.includes(file.mimetype)) {
-      return cb(new Error('Invalid file type. Only JPG, PNG, PDF, and TXT are allowed.'), false);
+    // Basic MIME type validation
+    const allowedMimeTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+    if (allowedMimeTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only JPEG, PNG, and PDF are allowed.'));
     }
-    cb(null, true);
   }
 });
 
-function parseTags(text) {
-  const tagRegex = /#(\w+)/g;
-  let tags = [];
-  let match;
-  while ((match = tagRegex.exec(text)) !== null) {
-    tags.push(match[1]);
-  }
-  return tags;
-}
-
-// Get all tasks (optionally filter by projectId or date)
 router.get('/', (req, res) => {
   try {
     const { projectId, date } = req.query;
-    let query = 'SELECT * FROM Tasks';
-    let params = [];
-    let conditions = [];
-
+    let tasks;
     if (projectId) {
-      conditions.push('projectId = ?');
-      params.push(projectId);
+      tasks = db.prepare('SELECT * FROM Tasks WHERE projectId = ?').all(projectId);
+    } else if (date) {
+      tasks = db.prepare('SELECT * FROM Tasks WHERE dueDate = ?').all(date);
+    } else {
+      tasks = db.prepare('SELECT * FROM Tasks').all();
     }
-    
-    // For 'Today' view, filter by due date
-    if (date) {
-      conditions.push('dueDate = ?');
-      params.push(date);
-    }
-
-    if (conditions.length > 0) {
-      query += ' WHERE ' + conditions.join(' AND ');
-    }
-
-    const tasks = db.prepare(query).all(...params);
     res.json(tasks);
   } catch (err) {
-    res.status(500).json({ error: 'Database error' });
+    res.status(500).json({ error: 'Failed to fetch tasks' });
   }
 });
 
-// Create task
+// Create task with UUID deduplication
 router.post('/', (req, res) => {
   try {
-    const { text, projectId, priority, dueDate, timeBlock, assigneeId } = req.body;
-    if (!text) return res.status(400).json({ error: 'Text required' });
+    const { text, projectId, priority, dueDate, timeBlock, assigneeId, uuid } = req.body;
+    if (!text) return res.status(400).json({ error: 'Text is required' });
 
-    const info = db.prepare(`
-      INSERT INTO Tasks (text, projectId, priority, dueDate, timeBlock, assigneeId) 
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).run(text, projectId || 1, priority || 'P5', dueDate || null, timeBlock || null, assigneeId || null);
+    // Deduplication check
+    if (uuid) {
+      const existing = db.prepare('SELECT * FROM Tasks WHERE uuid = ?').get(uuid);
+      if (existing) {
+        return res.json(existing); // Return existing task acknowledging success
+      }
+    }
+
+    const stmt = db.prepare(`
+      INSERT INTO Tasks (text, projectId, priority, dueDate, timeBlock, assigneeId, status, uuid) 
+      VALUES (?, ?, ?, ?, ?, ?, 'todo', ?)
+    `);
+    
+    const info = stmt.run(text, projectId || null, priority || 'P5', dueDate || null, timeBlock || null, assigneeId || null, uuid || null);
     
     const newTask = db.prepare('SELECT * FROM Tasks WHERE id = ?').get(info.lastInsertRowid);
-    
-    // Auto-extract tags
-    const extractedTags = parseTags(text);
-    extractedTags.forEach(tagName => {
-      // insert or ignore tag
-      db.prepare('INSERT OR IGNORE INTO Tags (name) VALUES (?)').run(tagName);
-      const tag = db.prepare('SELECT id FROM Tags WHERE name = ?').get(tagName);
-      if (tag) {
-        db.prepare('INSERT OR IGNORE INTO TaskTags (taskId, tagId) VALUES (?, ?)').run(newTask.id, tag.id);
-      }
-    });
-
     triggerWebhook(newTask, 'task.created');
 
-    // Broadcast WebSocket event
+    const clientId = req.headers['x-client-id'];
     if (req.app.locals.broadcast) {
-      req.app.locals.broadcast({ type: 'TASK_CREATED', payload: newTask });
+      req.app.locals.broadcast({ type: 'TASK_MUTATE', action: 'CREATE', payload: newTask, clientId });
     }
 
     res.status(201).json(newTask);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Database error' });
+    res.status(500).json({ error: 'Failed to create task' });
   }
 });
 
-// Update task (mark complete, change priority, add notes, etc)
+// Update task
 router.put('/:id', (req, res) => {
   try {
     const { id } = req.params;
@@ -117,73 +97,84 @@ router.put('/:id', (req, res) => {
     let setClauses = [];
     let params = [];
     
-    for (const key of allowedFields) {
-      if (updates[key] !== undefined) {
+    for (const key of Object.keys(updates)) {
+      if (allowedFields.includes(key)) {
         setClauses.push(`${key} = ?`);
         params.push(updates[key]);
       }
     }
-    
-    if (setClauses.length === 0) return res.status(400).json({ error: 'No valid fields provided for update' });
+
+    if (setClauses.length === 0) return res.json(task);
 
     params.push(id);
-
-    if (setClauses.length > 0) {
-      db.prepare(`UPDATE Tasks SET ${setClauses.join(', ')} WHERE id = ?`).run(...params);
-    }
+    db.prepare(`UPDATE Tasks SET ${setClauses.join(', ')} WHERE id = ?`).run(...params);
 
     const updatedTask = db.prepare('SELECT * FROM Tasks WHERE id = ?').get(id);
     triggerWebhook(updatedTask, 'task.updated');
 
     const clientId = req.headers['x-client-id'];
     if (req.app.locals.broadcast) {
-      req.app.locals.broadcast({ type: 'TASK_UPDATED', payload: updatedTask, clientId });
+      req.app.locals.broadcast({ type: 'TASK_MUTATE', action: 'UPDATE', payload: updatedTask, clientId });
     }
 
     res.json(updatedTask);
   } catch (err) {
-    res.status(500).json({ error: 'Database error' });
+    console.error(err);
+    res.status(500).json({ error: 'Failed to update task' });
   }
 });
 
-// Upload attachment
-router.post('/:id/attachment', upload.single('file'), (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-
-    const attachmentPath = `/uploads/${req.file.filename}`;
-    db.prepare('UPDATE Tasks SET attachmentPath = ? WHERE id = ?').run(attachmentPath, id);
-    
-    const updatedTask = db.prepare('SELECT * FROM Tasks WHERE id = ?').get(id);
-    triggerWebhook(updatedTask, 'task.attachment_added');
-
-    if (req.app.locals.broadcast) {
-      req.app.locals.broadcast({ type: 'TASK_UPDATED', payload: updatedTask });
-    }
-
-    res.json(updatedTask);
-  } catch (err) {
-    res.status(500).json({ error: 'Database error' });
-  }
-});
-
-// Delete task
+// Delete using explicit transaction wrapper from db.js
 router.delete('/:id', (req, res) => {
   try {
     const { id } = req.params;
-    db.prepare('DELETE FROM Tasks WHERE id = ?').run(id);
     
-    triggerWebhook({ id }, 'task.deleted');
+    db.runTransaction(() => {
+      db.prepare('DELETE FROM TaskTags WHERE taskId = ?').run(id);
+      db.prepare('DELETE FROM Tasks WHERE id = ?').run(id);
+    });
 
+    const clientId = req.headers['x-client-id'];
     if (req.app.locals.broadcast) {
-      req.app.locals.broadcast({ type: 'TASK_DELETED', payload: { id } });
+      req.app.locals.broadcast({ type: 'TASK_MUTATE', action: 'DELETE', payload: { id: parseInt(id) }, clientId });
+    }
+    
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to delete task' });
+  }
+});
+
+// Attachment handling
+router.post('/:id/attachment', upload.single('file'), (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No valid file uploaded' });
+    
+    const { id } = req.params;
+    const filePath = `/uploads/${req.file.filename}`;
+    
+    db.prepare('UPDATE Tasks SET attachmentPath = ? WHERE id = ?').run(filePath, id);
+    const updatedTask = db.prepare('SELECT * FROM Tasks WHERE id = ?').get(id);
+    
+    const clientId = req.headers['x-client-id'];
+    if (req.app.locals.broadcast) {
+      req.app.locals.broadcast({ type: 'TASK_MUTATE', action: 'UPDATE', payload: updatedTask, clientId });
     }
 
-    res.status(204).send();
+    res.json(updatedTask);
   } catch (err) {
-    res.status(500).json({ error: 'Database error' });
+    console.error(err);
+    res.status(500).json({ error: 'Failed to upload attachment' });
   }
+});
+
+// Error handling for Multer
+router.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError || err.message.includes('Invalid file type')) {
+    return res.status(400).json({ error: err.message });
+  }
+  next(err);
 });
 
 module.exports = router;

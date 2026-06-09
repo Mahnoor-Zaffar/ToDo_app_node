@@ -2,10 +2,8 @@ export function initWebSocket(onMessage) {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   const ws = new WebSocket(`${protocol}//${window.location.host}`);
 
-  ws.onopen = () => {
-    console.log('[WebSocket] Connected');
-  };
-
+  ws.onopen = () => console.log('[WebSocket] Connected');
+  
   ws.onmessage = (event) => {
     try {
       const data = JSON.parse(event.data);

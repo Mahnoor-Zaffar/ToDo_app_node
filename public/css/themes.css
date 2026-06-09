@@ -1,29 +1,45 @@
 :root {
+  /* Light Theme */
   --bg-primary: #ffffff;
-  --bg-secondary: #f3f5f8;
-  --bg-tertiary: #e9ecef;
-  --text-primary: #111827;
-  --text-secondary: #6b7280;
-  --accent-color: #e2e8f0;
-  --border-color: #e5e7eb;
+  --bg-secondary: #f4f5f7;
+  --bg-tertiary: #ebecf0;
+  --text-primary: #172b4d;
+  --text-secondary: #5e6c84;
+  --accent-color: #0052cc;
+  --accent-light: #deebff;
+  --border-color: #dfe1e6;
+  --shadow-sm: 0 1px 2px rgba(9, 30, 66, 0.25);
+  --shadow-md: 0 4px 8px -2px rgba(9, 30, 66, 0.25);
   
-  --priority-p1: #fee2e2;
-  --priority-p1-text: #b91c1c;
-  --priority-p2: #ffedd5;
-  --priority-p2-text: #c2410c;
-  --priority-p3: #fef9c3;
-  --priority-p3-text: #a16207;
-  --priority-p4: #dbeafe;
-  --priority-p4-text: #1d4ed8;
-  --priority-p5: #f3f4f6;
-  --priority-p5-text: #374151;
-  
-  --font-sans: 'Outfit', -apple-system, sans-serif;
-  --radius-sm: 8px;
-  --radius-md: 12px;
+  --priority-p1: #ffebe6; --priority-p1-text: #bf2600;
+  --priority-p2: #fffae6; --priority-p2-text: #ff8b00;
+  --priority-p3: #e3fcef; --priority-p3-text: #006644;
+  --priority-p4: #deebff; --priority-p4-text: #0747a6;
+  --priority-p5: #f4f5f7; --priority-p5-text: #42526e;
+
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --radius-sm: 6px;
+  --radius-md: 10px;
   --radius-lg: 16px;
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+}
+
+[data-theme="dark"] {
+  --bg-primary: #1d2125;
+  --bg-secondary: #22272b;
+  --bg-tertiary: #2c333a;
+  --text-primary: #c7d1db;
+  --text-secondary: #8c9bab;
+  --accent-color: #579dff;
+  --accent-light: #1c2b41;
+  --border-color: #38414a;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 8px -2px rgba(0, 0, 0, 0.5);
+  
+  --priority-p1: #421814; --priority-p1-text: #f87168;
+  --priority-p2: #412b15; --priority-p2-text: #f5cd47;
+  --priority-p3: #183326; --priority-p3-text: #4bce97;
+  --priority-p4: #1c2b41; --priority-p4-text: #579dff;
+  --priority-p5: #2c333a; --priority-p5-text: #9fadbc;
 }
 
 body {
@@ -33,9 +49,8 @@ body {
   margin: 0;
   padding: 0;
   height: 100vh;
-  overflow: hidden;
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, #eef2f3 0%, #d8e2e7 100%);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
