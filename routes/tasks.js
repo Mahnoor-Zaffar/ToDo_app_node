@@ -54,6 +54,7 @@ router.post('/', (req, res) => {
   try {
     const { text, projectId, priority, dueDate, timeBlock, assigneeId, uuid } = req.body;
     if (!text) return res.status(400).json({ error: 'Text is required' });
+    if (text.length > 2000) return res.status(400).json({ error: 'Text exceeds maximum length of 2000 characters' });
 
     // Deduplication check
     if (uuid) {
@@ -93,6 +94,7 @@ router.put('/:id', (req, res) => {
     if (!task) return res.status(404).json({ error: 'Task not found' });
 
     const updates = req.body;
+    if (updates.text && updates.text.length > 2000) return res.status(400).json({ error: 'Text exceeds maximum length of 2000 characters' });
     const allowedFields = ['text', 'notes', 'priority', 'dueDate', 'timeBlock', 'isCompleted', 'assigneeId', 'status'];
     let setClauses = [];
     let params = [];

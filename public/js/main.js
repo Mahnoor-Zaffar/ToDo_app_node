@@ -160,7 +160,12 @@ function setupUI() {
       const id = state.selectedTask.id || state.selectedTask.uuid;
       state.mutateTaskOptimistically(id, updates);
       if(state.selectedTask.id) {
-        api.updateTask(state.selectedTask.id, updates).then(res => state.acknowledgeTask(res));
+        api.updateTask(state.selectedTask.id, updates)
+          .then(res => state.acknowledgeTask(res))
+          .catch(err => {
+            console.error('Update failed, rolling back state', err);
+            api.tasks().then(tasks => state.setTasks(tasks));
+          });
       }
     }
   };
@@ -245,7 +250,12 @@ function attachTaskEvents(container) {
       const realId = isNaN(id) ? id : parseInt(id);
       state.mutateTaskOptimistically(realId, { isCompleted: e.target.checked ? 1 : 0 });
       if(typeof realId === 'number') {
-        api.updateTask(realId, { isCompleted: e.target.checked ? 1 : 0 }).then(res => state.acknowledgeTask(res));
+        api.updateTask(realId, { isCompleted: e.target.checked ? 1 : 0 })
+          .then(res => state.acknowledgeTask(res))
+          .catch(err => {
+            console.error('Update failed, rolling back state', err);
+            api.tasks().then(tasks => state.setTasks(tasks));
+          });
       }
     });
   });
@@ -305,7 +315,12 @@ function setupDragAndDrop() {
       if (realId && status) {
         state.mutateTaskOptimistically(realId, { status });
         if(typeof realId === 'number') {
-           api.updateTask(realId, { status }).then(res => state.acknowledgeTask(res));
+           api.updateTask(realId, { status })
+             .then(res => state.acknowledgeTask(res))
+             .catch(err => {
+               console.error('Drag drop failed, rolling back state', err);
+               api.tasks().then(tasks => state.setTasks(tasks));
+             });
         }
       }
     });
@@ -352,7 +367,8 @@ function populateDrawer() {
   });
   
   if (t.notes) {
-     quill.clipboard.dangerouslyPasteHTML(t.notes);
+     const cleanHTML = window.DOMPurify ? window.DOMPurify.sanitize(t.notes) : t.notes;
+     quill.clipboard.dangerouslyPasteHTML(cleanHTML);
   }
 
   quill.on('text-change', () => {
@@ -361,7 +377,12 @@ function populateDrawer() {
       const realId = state.selectedTask.id || state.selectedTask.uuid;
       state.mutateTaskOptimistically(realId, { notes: html });
       if(typeof realId === 'number') {
-        api.updateTask(realId, { notes: html }).then(res => state.acknowledgeTask(res));
+        api.updateTask(realId, { notes: html })
+          .then(res => state.acknowledgeTask(res))
+          .catch(err => {
+            console.error('Note update failed, rolling back state', err);
+            api.tasks().then(tasks => state.setTasks(tasks));
+          });
       }
     }
   });
