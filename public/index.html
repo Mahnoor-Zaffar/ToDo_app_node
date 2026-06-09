@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Todo App | Advanced</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <h2>My Tasks</h2>
+      <div id="sidebar-container"></div>
+    </aside>
+    
+    <main class="main-content">
+      <header>
+        <h1>Today's Plan</h1>
+        <p class="subtitle">Drag and drop to reorder tasks</p>
+      </header>
+      
+      <div class="task-input-section">
+        <form id="add-todo-form" class="add-form">
+          <input type="text" id="add-todo-input" placeholder="What's on your mind?" required autocomplete="off">
+          <button type="submit">Add Task</button>
+        </form>
+      </div>
+
+      <div id="main-list" class="task-list-container"></div>
+    </main>
+  </div>
+  
+  <div id="modal-container"></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
