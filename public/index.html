@@ -3,36 +3,73 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Todo App | Advanced</title>
-  <link rel="stylesheet" href="styles.css">
+  <title>Task Management Dashboard</title>
+  <link rel="stylesheet" href="css/themes.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
   <div class="app-container">
+    <!-- Left Sidebar -->
     <aside class="sidebar">
-      <h2>My Tasks</h2>
-      <div id="sidebar-container"></div>
+      <div class="nav-section" style="margin-bottom: 2rem;">
+        <h3>Views</h3>
+        <div class="nav-item" id="view-today">Today</div>
+      </div>
+      <div class="nav-section">
+        <h3>Projects</h3>
+        <div id="sidebar-projects"></div>
+      </div>
     </aside>
     
-    <main class="main-content">
-      <header>
-        <h1>Today's Plan</h1>
-        <p class="subtitle">Drag and drop to reorder tasks</p>
-      </header>
-      
-      <div class="task-input-section">
-        <form id="add-todo-form" class="add-form">
-          <input type="text" id="add-todo-input" placeholder="What's on your mind?" required autocomplete="off">
-          <button type="submit">Add Task</button>
-        </form>
+    <!-- Central Pane -->
+    <main class="main-pane">
+      <div class="main-header">
+        <h1 id="main-header-title">Inbox</h1>
       </div>
-
-      <div id="main-list" class="task-list-container"></div>
+      <div class="quick-add">
+        <input type="text" id="quick-add-input" placeholder="Add a task... Use !p1 for priority or @ initials for assignees" autocomplete="off">
+      </div>
+      <div class="main-content" id="main-list">
+        <!-- Tasks rendered here -->
+      </div>
     </main>
+
+    <!-- Right Drawer -->
+    <aside class="right-drawer" id="right-drawer">
+      <div class="drawer-header">
+        <h2>Task Details</h2>
+        <button class="close-btn" id="close-drawer">&times;</button>
+      </div>
+      <div class="drawer-content">
+        <div class="form-group">
+          <label>Priority</label>
+          <select id="task-priority">
+            <option value="P1">P1 - Urgent</option>
+            <option value="P2">P2 - High</option>
+            <option value="P3">P3 - Medium</option>
+            <option value="P4">P4 - Low</option>
+            <option value="P5">P5 - None</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Time Block (e.g. 09:00 - 10:00)</label>
+          <input type="text" id="task-timeblock" placeholder="10:00 AM">
+        </div>
+        <div class="form-group">
+          <label>Notes (Markdown supported)</label>
+          <textarea id="task-notes" rows="6" placeholder="Add details..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Attachment</label>
+          <input type="file" id="task-attachment">
+          <a id="attachment-link" target="_blank" style="display:none; margin-top: 0.5rem; color: var(--accent-color);"></a>
+        </div>
+      </div>
+    </aside>
   </div>
   
-  <div id="modal-container"></div>
-
-  <script type="module" src="js/app.js"></script>
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>
