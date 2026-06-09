@@ -1,28 +1,43 @@
-# Task Management Dashboard
+# Apex Tasks Dashboard
 
-A full-featured, collaborative Task Management Dashboard built with Node.js, Express, SQLite, and WebSockets.
+A highly-optimized, production-ready, real-time Task Management Dashboard built entirely with Node.js, Express, SQLite, and Vanilla ES6+ without heavy external frameworks. 
 
 ![Dashboard Preview](./screenshot.png)
 
-## Features
+## Elite Features
 
-- **Optimistic UI**: Immediate UI updates (0ms latency) that sync silently in the background.
-- **Real-Time Presence**: WebSockets sync changes and display live avatars for active collaborators.
-- **Kanban Drag-and-Drop**: Easily switch between List and Kanban views and natively drag tasks across statuses.
-- **Rich Text Editor**: A built-in Notion-style block editor (via Quill.js) for task notes.
-- **Quick Add Parsing**: Create tasks quickly with inline priorities (`!p1`) and assignees (`@JD`).
-- **File Attachments**: Local file uploads using `multer`.
-- **Zero Configuration**: Uses `better-sqlite3` so no external database servers are required.
+### 🚀 Zero-Latency Optimistic UI
+A custom Vanilla JS State Machine ensures that UI interactions happen instantly. Tasks are immediately rendered locally (`local-optimistic` state) and seamlessly sync with the server (`server-acknowledged` state) in the background.
+
+### 🌐 High-Performance WebSockets
+Real-time collaboration is powered by native `ws` WebSockets.
+- **Bi-directional Heartbeat**: Implements a 30-second ping/pong protocol to gracefully handle disconnects.
+- **Idempotency & Deduplication**: Client-side generated UUIDs prevent duplicate task creations on spotty networks.
+- **Live Presence Engine**: Absolute-positioned avatar tracks (`+3 others`) animate smoothly when users enter or leave the workspace.
+
+### 🎯 Native HTML5 Kanban Drag-and-Drop
+Say goodbye to heavy, clunky drag-and-drop libraries. This implementation uses native HTML5 `dragstart`, `dragover`, `drop`, and `dragend` events.
+- **Ghost Drop-Zones**: Visual placeholder "ghost" containers inject themselves exactly where the card will land.
+- **Smooth Animations**: Uses CSS transforms and tilt transitions (`transform: rotate(2deg) scale(1.02)`) while dragging.
+
+### ⚡ RegEx Quick Add Engine
+The Quick Add input parses shorthand syntax instantly. Typing `!p1`, `@User`, or `//today` dynamically injects visual UI chips beneath the input bar *before* submission, allowing for ultra-fast data entry.
+
+### 🛡️ Production-Ready Backend
+- **Optimized SQLite**: Multi-table deletions and cascading updates are wrapped in explicit database transactions (`db.transaction()`). Schema tables utilize explicit `CREATE INDEX` parameters for ultra-fast row lookups.
+- **Hardened File Uploads**: `multer` configuration strictly limits files to 5MB, verifies Magic Byte/MIME types (JPEG/PNG/PDF only), and sanitizes all filenames using `crypto.randomBytes` hashes to prevent directory traversal vulnerabilities.
+- **Quill.js Memory Safety**: The rich text editor instances are cleanly decoupled and destroyed upon drawer closure to prevent DOM memory leaks.
 
 ## Installation
 
-1. `npm install`
-2. `node server.js`
-3. Navigate to `http://localhost:3000`
+1. Clone the repository and run `npm install`.
+2. Start the server with `node server.js`.
+3. Navigate to `http://localhost:3000`.
 
-## Architecture
+## Architecture & Tech Stack
 
-- **Backend**: Node.js + Express
-- **Database**: SQLite3 (`better-sqlite3`)
-- **Realtime**: `ws` native WebSockets
-- **Frontend**: Vanilla ES6+, Modular CSS3
+- **Backend**: Node.js, Express.js
+- **Database**: SQLite3 (`better-sqlite3`) with explicit transactional boundaries
+- **Realtime Sync**: `ws` Native WebSockets
+- **Frontend State**: Modular Vanilla JS (`state.js`)
+- **Styling**: Strict CSS Variable Tokens system with built-in Light/Dark mode toggling.
