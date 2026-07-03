@@ -1,38 +1,134 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Todo App | Advanced</title>
-  <link rel="stylesheet" href="styles.css">
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <title>Apex Tasks - Production</title>
+  <link rel="stylesheet" href="css/themes.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <!-- Quill Rich Text Editor -->
+  <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+  <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
 </head>
 <body>
   <div class="app-container">
+    <!-- Left Sidebar -->
     <aside class="sidebar">
-      <h2>My Tasks</h2>
-      <div id="sidebar-container"></div>
+      <div class="sidebar-header">
+        <div class="user-profile">
+          <img src="https://ui-avatars.com/api/?name=Loading&background=random" alt="Avatar" class="avatar" id="current-user-avatar">
+          <span id="current-user-name" style="font-weight:600;">Apex Tasks</span>
+        </div>
+        <button class="icon-btn" id="theme-toggle" aria-label="Toggle Theme">🌓</button>
+      </div>
+      <div class="nav-section" style="margin-bottom: 2rem;">
+        <div class="nav-item active" id="view-today">
+          <span class="icon">📅</span> Today
+        </div>
+        <div class="nav-item" id="view-inbox">
+          <span class="icon">📥</span> Inbox
+        </div>
+      </div>
+      <div class="nav-section">
+        <h3 style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-secondary);">Projects</h3>
+        <div id="sidebar-projects"></div>
+      </div>
     </aside>
     
-    <main class="main-content">
-      <header>
-        <h1>Today's Plan</h1>
-        <p class="subtitle">Drag and drop to reorder tasks</p>
-      </header>
-      
-      <div class="task-input-section">
-        <form id="add-todo-form" class="add-form">
-          <input type="text" id="add-todo-input" placeholder="What's on your mind?" required autocomplete="off">
-          <button type="submit">Add Task</button>
-        </form>
+    <!-- Central Pane -->
+    <main class="main-pane">
+      <div class="main-header">
+        <h1 id="main-header-title" style="margin:0; font-size:1.75rem;">Today's Focus</h1>
+        <div class="header-right">
+          <div id="presence-avatars" class="presence-avatars">
+             <div class="avatar-track" id="avatar-track"></div>
+          </div>
+          <button class="icon-btn" id="toggle-view-btn" aria-label="Toggle Kanban">◫</button>
+        </div>
       </div>
-
-      <div id="main-list" class="task-list-container"></div>
+      <div class="quick-add">
+        <input type="text" id="quick-add-input" aria-label="Quick add new task" placeholder="Add a task (use !p1 for priority, @user to assign)..." autocomplete="off">
+        <div class="quick-add-preview" id="quick-add-preview"></div>
+      </div>
+      
+      <div class="main-content" id="main-content-area">
+        <!-- List View -->
+        <div id="list-view" class="view-container"></div>
+        
+        <!-- Kanban View -->
+        <div id="kanban-view" class="view-container" style="display: none;">
+          <div class="kanban-column">
+            <h3 style="margin-top:0;">To Do</h3>
+            <div class="kanban-dropzone" data-status="todo"></div>
+          </div>
+          <div class="kanban-column">
+            <h3 style="margin-top:0;">In Progress</h3>
+            <div class="kanban-dropzone" data-status="in-progress"></div>
+          </div>
+          <div class="kanban-column">
+            <h3 style="margin-top:0;">Done</h3>
+            <div class="kanban-dropzone" data-status="done"></div>
+          </div>
+        </div>
+      </div>
     </main>
+
+    <!-- Right Drawer -->
+    <aside class="right-drawer" id="right-drawer">
+      <div class="drawer-header">
+        <button class="icon-btn" id="close-drawer" aria-label="Close drawer">➡️</button>
+        <button class="icon-btn" id="delete-task-btn" aria-label="Delete Task">🗑️</button>
+      </div>
+      <div class="drawer-content">
+        <input type="text" id="task-title-input" class="input-light" style="font-size:1.5rem; font-weight:600; margin-bottom:1.5rem; border:none; padding:0; background:transparent;" placeholder="Task Title">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Priority</label>
+            <select id="task-priority" class="select-light">
+              <option value="P1">Urgent</option>
+              <option value="P2">High</option>
+              <option value="P3">Medium</option>
+              <option value="P4">Low</option>
+              <option value="P5">None</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Status</label>
+            <select id="task-status" class="select-light">
+              <option value="todo">To Do</option>
+              <option value="in-progress">In Progress</option>
+              <option value="done">Done</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>Due Date</label>
+          <input type="date" id="task-duedate" class="input-light">
+        </div>
+        
+        <div class="form-group">
+          <label>Notes</label>
+          <!-- Dynamic Quill Container to prevent memory leaks -->
+          <div id="quill-container-wrapper">
+             <div id="quill-editor" style="background:var(--bg-primary); border-radius:var(--radius-sm); min-height:150px; border:1px solid var(--border-color);"></div>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>Attachments</label>
+          <div class="upload-zone">
+            <input type="file" id="task-attachment" class="file-hidden">
+            <label for="task-attachment" class="upload-btn">☁️ Upload File</label>
+          </div>
+          <div id="attachment-list" class="attachment-list"></div>
+        </div>
+      </div>
+    </aside>
   </div>
   
-  <div id="modal-container"></div>
-
-  <script type="module" src="js/app.js"></script>
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>
